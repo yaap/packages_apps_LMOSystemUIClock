@@ -24,5 +24,6 @@ android_app {
         enabled: false,
     },
     platform_apis: true,
+    privileged: true,
     system_ext_specific: true,
 }
