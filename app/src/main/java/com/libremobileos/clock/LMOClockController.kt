@@ -31,6 +31,7 @@ import com.android.systemui.plugins.clocks.ThemeConfig
 import com.android.systemui.plugins.clocks.WeatherData
 import com.android.systemui.plugins.clocks.ZenData
 import java.io.PrintWriter
+import java.lang.IllegalStateException
 import java.util.Locale
 import java.util.TimeZone
 
@@ -91,6 +92,9 @@ class LMOClockController(
             )
         clocks = listOf(smallClock.view, largeClock.view)
 
+        smallClock.animations = DefaultClockAnimations(smallClock.view, 0f, 0f)
+        largeClock.animations = LargeClockAnimations(largeClock.view, 0f, 0f)
+
         events = DefaultClockEvents()
         events.onLocaleChanged(Locale.getDefault())
     }
@@ -101,10 +105,16 @@ class LMOClockController(
         foldFraction: Float,
         clockListener: ClockEventListener?,
     ) {
-        largeClock.recomputePadding(null)
+        clocks.forEach { it.configureBurnInProtectionDp(horizontalDp = 32f, verticalDp = 64f) }
 
         largeClock.animations = LargeClockAnimations(largeClock.view, dozeFraction, foldFraction)
         smallClock.animations = DefaultClockAnimations(smallClock.view, dozeFraction, foldFraction)
+
+        largeClock.recomputePadding(null)
+
+        val initiallyDozing = dozeFraction > 0.5f
+        smallClock.view.setDozeState(initiallyDozing)
+        largeClock.view.setDozeState(initiallyDozing)
 
         largeClock.events.onThemeChanged(largeClock.theme.copy(isDarkTheme = isDarkTheme))
         smallClock.events.onThemeChanged(smallClock.theme.copy(isDarkTheme = isDarkTheme))
@@ -131,7 +141,7 @@ class LMOClockController(
                     sysuiResources.getIdentifier("lockscreen_clock_view", "id", sysuiCtx.packageName)
             }
 
-        override var animations: DefaultClockAnimations = DefaultClockAnimations(view, 0f, 0f)
+        override lateinit var animations: DefaultClockAnimations
             internal set
 
         init {
@@ -188,7 +198,6 @@ class LMOClockController(
 
         init {
             view.hasCustomPositionUpdatedAnimation = true
-            animations = LargeClockAnimations(view, 0f, 0f)
         }
 
         override fun recomputePadding(targetRegion: Rect?) {}
@@ -243,6 +252,8 @@ class LMOClockController(
                 view.animateFoldAppear(false)
             } else {
                 view.animateDoze(dozeState.isActive, false)
+                smallClock.view.setDozeState(false)
+                largeClock.view.setDozeState(false)
             }
         }
 
@@ -264,15 +275,15 @@ class LMOClockController(
         override fun doze(fraction: Float) {
             val (hasChanged, hasJumped) = dozeState.update(fraction)
             if (hasChanged) {
+                smallClock.view.setDozeState(dozeState.isActive)
+                largeClock.view.setDozeState(dozeState.isActive)
                 view.animateDoze(dozeState.isActive, !hasJumped)
             }
         }
 
         override fun onPickerCarouselSwiping(swipingFraction: Float) {
-            // TODO(b/278936436): refactor this part when we change recomputePadding
-            // when on the side, swipingFraction = 0, translationY should offset
-            // the top margin change in recomputePadding to make clock be centered
-            view.translationY = 0.5f * view.bottom * (1 - swipingFraction)
+            val baseY = 0.5f * view.bottom * (1 - swipingFraction)
+            view.setBaseTranslation(0f, baseY)
         }
 
         override fun onPositionUpdated(fromLeft: Int, direction: Int, fraction: Float) {}

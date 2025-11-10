@@ -24,6 +24,8 @@ import android.view.View.MeasureSpec.EXACTLY
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.os.Handler
+import android.os.SystemClock
 import androidx.core.content.res.ResourcesCompat
 import com.android.app.animation.Interpolators
 import com.android.internal.annotations.VisibleForTesting
@@ -41,6 +43,8 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.min
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Displays the time with the hour positioned above the minutes (ie: 09 above 30 is 9:30). The
@@ -174,7 +178,27 @@ constructor(
     override fun onAttachedToWindow() {
         logger.d("onAttachedToWindow")
         super.onAttachedToWindow()
+        configureBurnInProtectionDp(horizontalDp = 32f, verticalDp = 64f)
+        updateBurnInOffsets()
         refreshFormat()
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(burnInTicker)
+        burnInTickerPosted = false
+        super.onDetachedFromWindow()
+    }
+
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        if (isVisible) {
+            if (isDozing) {
+                scheduleNextBurnInTick()
+            }
+        } else {
+            removeCallbacks(burnInTicker)
+            burnInTickerPosted = false
+        }
     }
 
     /** Whether to use a bolded version based on the user specified fontWeightAdjustment. */
@@ -183,25 +207,73 @@ constructor(
         return resources.configuration.fontWeightAdjustment > 100
     }
 
+    private var burnInEnabled = false
+    private var burnInMaxAmplitudeX = 0   // pixels
+    private var burnInMaxAmplitudeY = 0   // pixels
+    private var burnInOffsetX = 0f
+    private var burnInOffsetY = 0f
+    private var baseTranslationX = 0f
+    private var baseTranslationY = 0f
+    private var burnInTickerPosted = false
+    private val burnInTicker = Runnable { onBurnInTick() }
+    private var isDozing = false
+    private var lastAodOffsetX = 0f
+    private var lastAodOffsetY = 0f
+
+    fun configureBurnInProtectionDp(horizontalDp: Float, verticalDp: Float) {
+        val d = resources.displayMetrics.density
+        configureBurnInProtectionPx((horizontalDp * d).roundToInt(), (verticalDp * d).roundToInt())
+    }
+
+    fun configureBurnInProtectionPx(maxAmplitudeXPx: Int, maxAmplitudeYPx: Int) {
+        burnInMaxAmplitudeX = maxAmplitudeXPx
+        burnInMaxAmplitudeY = maxAmplitudeYPx
+        burnInEnabled = (maxAmplitudeXPx > 0 || maxAmplitudeYPx > 0)
+        updateBurnInOffsets()
+    }
+
+    fun setDozeState(dozing: Boolean) {
+        if (isDozing == dozing) return
+        isDozing = dozing
+        if (dozing) {
+            updateBurnInOffsets()
+            if (lastAodOffsetX != 0f || lastAodOffsetY != 0f) {
+                burnInOffsetX = lastAodOffsetX
+                burnInOffsetY = lastAodOffsetY
+                updateTranslationFromOffsets()
+            }
+            scheduleNextBurnInTick()
+        } else {
+            removeCallbacks(burnInTicker)
+            burnInTickerPosted = false
+            lastAodOffsetX = burnInOffsetX
+            lastAodOffsetY = burnInOffsetY
+            animateBurnInReturn()
+        }
+    }
+
+    fun setBaseTranslation(x: Float, y: Float) {
+        baseTranslationX = x
+        baseTranslationY = y
+        updateBurnInOffsets()
+    }
+
     fun refreshTime() {
         time.timeInMillis = timeOverrideInMillis ?: System.currentTimeMillis()
         contentDescription = DateFormat.format(descFormat, time)
         val formattedText = DateFormat.format(format, time)
-        logger.d({ "refreshTime: new formattedText=${escapeTime(str1)}" }) {
-            str1 = formattedText?.toString()
-        }
+        logger.d("refreshTime: new formattedText=${escapeTime(formattedText?.toString() ?: "null")}")
 
         // Setting text actually triggers a layout pass in TextView (because the text view is set to
         // wrap_content width and TextView always relayouts for this). This avoids needless relayout
         // if the text didn't actually change.
         if (TextUtils.equals(text, formattedText)) {
+            updateBurnInOffsets()
             return
         }
 
         text = formattedText
-        logger.d({ "refreshTime: done setting new time text to: ${escapeTime(str1)}" }) {
-            str1 = formattedText?.toString()
-        }
+        logger.d("refreshTime: done setting new time text to: ${escapeTime(formattedText?.toString() ?: "null")}")
 
         // Because the TextLayout may mutate under the hood as a result of the new text, we notify
         // the TextAnimator that it may have changed and request a measure/layout. A crash will
@@ -212,12 +284,80 @@ constructor(
             logger.d("refreshTime: done updating textAnimator layout")
         }
 
+        updateBurnInOffsets()
         requestLayout()
         logger.d("refreshTime: after requestLayout")
     }
 
+    private fun onBurnInTick() {
+        if (burnInEnabled && isShown) {
+            updateBurnInOffsets()
+        }
+        scheduleNextBurnInTick()
+    }
+
+    private fun scheduleNextBurnInTick() {
+        if (burnInTickerPosted) return
+        val nowWall = System.currentTimeMillis()
+        val msToNextMinute = 60_000L - (nowWall % 60_000L)
+        val whenUptime = SystemClock.uptimeMillis() + msToNextMinute
+        removeCallbacks(burnInTicker)
+        val h: Handler? = handler
+        if (h != null) {
+            h.postAtTime(burnInTicker, whenUptime)
+        } else {
+            postDelayed(burnInTicker, msToNextMinute)
+        }
+        burnInTickerPosted = true
+        post { burnInTickerPosted = false }
+    }
+
+    private fun animateBurnInReturn() {
+        val startOffsetX = burnInOffsetX
+        val startOffsetY = burnInOffsetY
+        val startTime = System.currentTimeMillis()
+        val duration = 300L
+        val anim = object : Runnable {
+            override fun run() {
+                val elapsed = System.currentTimeMillis() - startTime
+                val progress = (elapsed.toFloat() / duration).coerceIn(0f, 1f)
+                burnInOffsetX = startOffsetX * (1f - progress)
+                burnInOffsetY = startOffsetY * (1f - progress)
+                updateTranslationFromOffsets()
+                if (progress < 1f) postDelayed(this, 16)
+            }
+        }
+        post(anim)
+    }
+
+    private fun updateBurnInOffsets() {
+        if (!burnInEnabled) return
+        burnInOffsetX = getBurnInOffsetPx(burnInMaxAmplitudeX, true).toFloat()
+        burnInOffsetY = getBurnInOffsetPx(burnInMaxAmplitudeY, false).toFloat()
+        updateTranslationFromOffsets()
+        if (isDozing) {
+            lastAodOffsetX = burnInOffsetX
+            lastAodOffsetY = burnInOffsetY
+        }
+    }
+
+    private fun updateTranslationFromOffsets() {
+        translationX = baseTranslationX + burnInOffsetX
+        translationY = baseTranslationY + burnInOffsetY
+    }
+
+    private fun getBurnInOffsetPx(amplitudePx: Int, xAxis: Boolean): Int {
+        if (amplitudePx <= 0) return 0
+        val minutes = System.currentTimeMillis() / MILLIS_PER_MIN
+        val period = if (xAxis) BURN_IN_PERIOD_X_MIN else BURN_IN_PERIOD_Y_MIN
+        val phase = ((minutes % period).toFloat() / period.toFloat())
+        val up = if (phase < 0.5f) (phase * 2f) else ((1f - phase) * 2f)
+        val centered = (up - 0.5f) * 2f
+        return (centered * amplitudePx).roundToInt()
+    }
+
     fun onTimeZoneChanged(timeZone: TimeZone?) {
-        logger.d({ "onTimeZoneChanged($str1)" }) { str1 = timeZone?.toString() }
+        logger.d("onTimeZoneChanged(${timeZone?.toString() ?: "null"})")
         time.timeZone = timeZone
         refreshFormat()
     }
@@ -284,7 +424,7 @@ constructor(
         lengthBefore: Int,
         lengthAfter: Int,
     ) {
-        logger.d({ "onTextChanged(${escapeTime(str1)})" }) { str1 = "$text" }
+        logger.d("onTextChanged(${escapeTime("$text")})")
         super.onTextChanged(text, start, lengthBefore, lengthAfter)
     }
 
@@ -423,9 +563,9 @@ constructor(
     private var currentAnimationNeededStop = false
 
     private val glyphFilter: GlyphCallback = { positionedGlyph, _ ->
-        val offset = positionedGlyph.lineNo * DIGITS_PER_LINE + positionedGlyph.glyphIndex
-        if (offset < glyphOffsets.size) {
-            positionedGlyph.x += glyphOffsets[offset]
+        val idx: Int = positionedGlyph.lineNo * DIGITS_PER_LINE + positionedGlyph.glyphIndex
+        if (idx in 0 until glyphOffsets.size) {
+            positionedGlyph.x += glyphOffsets[idx]
         }
     }
 
@@ -488,8 +628,7 @@ constructor(
                 isSingleLineInternal && !use24HourFormat -> Patterns.sClockView12
                 else -> DOUBLE_LINE_FORMAT_12_HOUR
             }
-        logger.d({ "refreshFormat(${escapeTime(str1)})" }) { str1 = format?.toString() }
-
+        logger.d("refreshFormat(${escapeTime(format?.toString() ?: "null")})")
         descFormat = if (use24HourFormat) Patterns.sClockView24 else Patterns.sClockView12
         refreshTime()
     }
@@ -507,6 +646,10 @@ constructor(
         pw.println("    dozingColor=$dozingColor")
         pw.println("    lockScreenColor=$lockScreenColor")
         pw.println("    time=$time")
+        pw.println("    burnInEnabled=$burnInEnabled")
+        pw.println("    burnInMaxAmplitudeX=$burnInMaxAmplitudeX")
+        pw.println("    burnInMaxAmplitudeY=$burnInMaxAmplitudeY")
+        pw.println("    baseTranslation=($baseTranslationX,$baseTranslationY)")
     }
 
     private val moveToCenterDelays: List<Int>
@@ -646,57 +789,24 @@ constructor(
         private const val COLOR_ANIM_DURATION: Long = 400
         private const val NUM_CLOCK_FONT_ANIMATION_STEPS = 30
 
+        private const val MILLIS_PER_MIN = 60_000L
+        private const val BURN_IN_PERIOD_X_MIN = 83
+        private const val BURN_IN_PERIOD_Y_MIN = 521
+
         // Constants for the animation
         private val MOVE_INTERPOLATOR = Interpolators.EMPHASIZED
 
-        // Calculate the positions of all of the digits...
-        // Offset each digit by, say, 0.1
-        // This means that each digit needs to move over a slice of "fractions", i.e. digit 0 should
-        // move from 0.0 - 0.7, digit 1 from 0.1 - 0.8, digit 2 from 0.2 - 0.9, and digit 3
-        // from 0.3 - 1.0.
+        // Positions and digit layout for step animation
         private const val NUM_DIGITS = 4
         private const val DIGITS_PER_LINE = 2
 
-        // Delays. Each digit's animation should have a slight delay, so we get a nice
-        // "stepping" effect. When moving right, the second digit of the hour should move first.
-        // When moving left, the first digit of the hour should move first. The lists encode
-        // the delay for each digit (hour[0], hour[1], minute[0], minute[1]), to be multiplied
-        // by delayMultiplier.
+        // Stepping delays per digit for directional movement
         private val MOVE_LEFT_DELAYS = listOf(0, 1, 2, 3)
         private val MOVE_RIGHT_DELAYS = listOf(1, 0, 3, 2)
 
-        // How much delay to apply to each subsequent digit. This is measured in terms of "fraction"
-        // (i.e. a value of 0.1 would cause a digit to wait until fraction had hit 0.1, or 0.2 etc
-        // before moving).
-        //
-        // The current specs dictate that each digit should have a 33ms gap between them. The
-        // overall time is 1s right now.
+        // Delay per digit in fraction-of-animation units and available animation window
         private const val MOVE_DIGIT_STEP = 0.033f
-
-        // Total available transition time for each digit, taking into account the step. If step is
-        // 0.1, then digit 0 would animate over 0.0 - 0.7, making availableTime 0.7.
         private const val AVAILABLE_ANIMATION_TIME = 1.0f - MOVE_DIGIT_STEP * (NUM_DIGITS - 1)
-
-        fun getLargeClockView(context: Context, clockId: String): AnimatableClockView {
-            return AnimatableClockView(context).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER
-                )
-                gravity = Gravity.CENTER_HORIZONTAL
-                textAlignment = TEXT_ALIGNMENT_CENTER
-                textSize = resources.getDimension(R.dimen.large_clock_text_size)
-                typeface = ResourcesCompat.getFont(context, selectFont(clockId))
-                includeFontPadding = false
-                fontFeatureSettings = "tnum"
-                isElegantTextHeight = false
-                isSingleLineInternal = false
-                chargeAnimationDelay = 200
-                dozingWeightInternal = 200
-                lockScreenWeightInternal = 400
-            }
-        }
 
         fun getSmallClockView(context: Context, clockId: String): AnimatableClockView {
             return AnimatableClockView(context).apply {
@@ -707,7 +817,7 @@ constructor(
                 )
                 gravity = Gravity.START
                 textAlignment = TEXT_ALIGNMENT_CENTER
-                textSize = resources.getDimension(R.dimen.small_clock_text_size)
+                textSize = context.resources.getDimension(R.dimen.small_clock_text_size)
                 typeface = ResourcesCompat.getFont(context, selectFont(clockId))
                 isElegantTextHeight = false
                 fontFeatureSettings = "pnum"
@@ -719,8 +829,38 @@ constructor(
             }
         }
 
+        fun getLargeClockView(context: Context, clockId: String): AnimatableClockView {
+            return AnimatableClockView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.CENTER
+                )
+                gravity = Gravity.CENTER_HORIZONTAL
+                textAlignment = TEXT_ALIGNMENT_CENTER
+                textSize = context.resources.getDimension(R.dimen.large_clock_text_size)
+                typeface = ResourcesCompat.getFont(context, selectFont(clockId))
+                includeFontPadding = false
+                fontFeatureSettings = "tnum"
+                isElegantTextHeight = false
+                isSingleLineInternal = false
+                chargeAnimationDelay = 200
+                dozingWeightInternal = 200
+                lockScreenWeightInternal = 400
+            }
+        }
+
+        fun getLineSpaceByClockId(clockId: String): Int {
+            return when (clockId) {
+                BLAKA_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_blaka
+                SFPRO_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_sfpro
+                NOTHINGDOT_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_nothingdot
+                else -> R.dimen.keyguard_clock_line_spacing_scale
+            }
+        }
+
         private fun selectFont(clockId: String): Int {
-            return when(clockId) {
+            return when (clockId) {
                 ALBERT_SANS_CLOCK_ID -> R.font.albertsans
                 BLAKA_CLOCK_ID -> R.font.blaka
                 MYSTERY_QUEST_CLOCK_ID -> R.font.mysteryquest
@@ -729,16 +869,7 @@ constructor(
                 SFPRO_CLOCK_ID -> R.font.sfpro_semibold_rounded
                 ACCURATIST_CLOCK_ID -> R.font.accuratist
                 NOTHINGDOT_CLOCK_ID -> R.font.nothingdot
-                else -> R.font.accuratist // Default fallback
-            }
-        }
-
-        fun getLineSpaceByClockId(clockId: String): Int {
-            return when(clockId) {
-                BLAKA_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_blaka
-                SFPRO_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_sfpro
-                NOTHINGDOT_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_nothingdot
-                else -> R.dimen.keyguard_clock_line_spacing_scale
+                else -> R.font.accuratist
             }
         }
     }
