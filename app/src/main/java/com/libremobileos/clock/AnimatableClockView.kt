@@ -580,11 +580,7 @@ constructor(
     }
 
     override fun onRtlPropertiesChanged(layoutDirection: Int) {
-        if (layoutDirection == LAYOUT_DIRECTION_RTL) {
-            textAlignment = TEXT_ALIGNMENT_TEXT_END
-        } else {
-            textAlignment = TEXT_ALIGNMENT_TEXT_START
-        }
+        textAlignment = TEXT_ALIGNMENT_CENTER
         super.onRtlPropertiesChanged(layoutDirection)
     }
 
@@ -689,8 +685,11 @@ constructor(
                     Gravity.CENTER
                 )
                 gravity = Gravity.CENTER_HORIZONTAL
+                textAlignment = TEXT_ALIGNMENT_CENTER
                 textSize = resources.getDimension(R.dimen.large_clock_text_size)
                 typeface = ResourcesCompat.getFont(context, selectFont(clockId))
+                includeFontPadding = false
+                fontFeatureSettings = "tnum"
                 isElegantTextHeight = false
                 isSingleLineInternal = false
                 chargeAnimationDelay = 200
@@ -707,10 +706,12 @@ constructor(
                     Gravity.START
                 )
                 gravity = Gravity.START
+                textAlignment = TEXT_ALIGNMENT_CENTER
                 textSize = resources.getDimension(R.dimen.small_clock_text_size)
                 typeface = ResourcesCompat.getFont(context, selectFont(clockId))
                 isElegantTextHeight = false
                 fontFeatureSettings = "pnum"
+                includeFontPadding = false
                 isSingleLineInternal = true
                 chargeAnimationDelay = 350
                 dozingWeightInternal = 200
