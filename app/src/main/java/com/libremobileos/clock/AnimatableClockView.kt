@@ -736,6 +736,7 @@ constructor(
                 SFPRO_CLOCK_ID -> R.font.sfpro_semibold_rounded
                 SPACEGAME_CLOCK_ID -> R.font.spacegame
                 ACCURATIST_CLOCK_ID -> R.font.accuratist
+                NOTHINGDOT_CLOCK_ID -> R.font.nothingdot
                 else -> R.font.modak // Default fallback
             }
         }
@@ -746,6 +747,7 @@ constructor(
                 MODAK_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_modak
                 SFPRO_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_sfpro
                 SUBWAY_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_subway
+                NOTHINGDOT_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_nothingdot
                 else -> R.dimen.keyguard_clock_line_spacing_scale
             }
         }

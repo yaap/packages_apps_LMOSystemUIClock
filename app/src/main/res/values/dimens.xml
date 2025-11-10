@@ -32,4 +32,6 @@
     <item name="keyguard_clock_line_spacing_scale_subway" type="dimen" format="float">0.9</item>
     <!-- SF Pro -->
     <item name="keyguard_clock_line_spacing_scale_sfpro" type="dimen" format="float">0.8</item>
+    <!-- Ndot57 -->
+    <item name="keyguard_clock_line_spacing_scale_nothingdot" type="dimen" format="float">0.9</item>
 </resources>

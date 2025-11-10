@@ -63,6 +63,10 @@
     <string name="clock_accuratist_name">Accuratist</string>
     <string name="clock_accuratist_description">Precise and technical geometric design</string>
 
+    <!-- Ndot57 Clock -->
+    <string name="clock_nothingdot_name">Ndot</string>
+    <string name="clock_nothingdot_description">Nothing dot clock</string>
+
     <!-- Skeleton string format for displaying the time in 12-hour format. -->
     <string name="clock_12hr_format">hm</string>
 

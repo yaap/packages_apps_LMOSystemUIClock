@@ -340,6 +340,7 @@ class LMOClockController(
             SFPRO_CLOCK_ID -> ctx.getString(R.string.clock_sfpro_name)
             SPACEGAME_CLOCK_ID -> ctx.getString(R.string.clock_spacegame_name)
             ACCURATIST_CLOCK_ID -> ctx.getString(R.string.clock_accuratist_name)
+            NOTHINGDOT_CLOCK_ID -> ctx.getString(R.string.clock_nothingdot_name)
             else -> ""
         }
     }
@@ -362,6 +363,7 @@ class LMOClockController(
             SFPRO_CLOCK_ID -> ctx.getString(R.string.clock_sfpro_description)
             SPACEGAME_CLOCK_ID -> ctx.getString(R.string.clock_spacegame_description)
             ACCURATIST_CLOCK_ID -> ctx.getString(R.string.clock_accuratist_description)
+            NOTHINGDOT_CLOCK_ID -> ctx.getString(R.string.clock_nothingdot_description)
             else -> ""
         }
     }
