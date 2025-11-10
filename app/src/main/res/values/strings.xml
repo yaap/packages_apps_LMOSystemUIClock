@@ -11,37 +11,14 @@
     <!-- Albert Sans -->
     <string name="clock_albert_sans_name">Albert sans</string>
     <string name="clock_albert_sans_description">Digital albert sans</string>
+
     <!-- Blaka -->
     <string name="clock_blaka_name">Blaka</string>
     <string name="clock_blaka_description">Digital blaka</string>
-    <!-- Creepster -->
-    <string name="clock_creepster_name">Creepster</string>
-    <string name="clock_creepster_description">Digital creepster</string>
-    <!-- Kablammo -->
-    <string name="clock_kablammo_name">Kablammo</string>
-    <string name="clock_kablammo_description">Digital kablammo</string>
-    <!-- Modak -->
-    <string name="clock_modak_name">Modak</string>
-    <string name="clock_modak_description">Digital modak</string>
+
     <!-- Mystery Quest -->
     <string name="clock_mystery_quest_name">Mystery Quest</string>
     <string name="clock_mystery_quest_description">Digital mystery quest</string>
-    <!-- Rubik Dirt -->
-    <string name="clock_rubik_dirt_name">Rubik Dirt</string>
-    <string name="clock_rubik_dirt_description">Digital Rubik Dirt</string>
-    <!-- Rubik Distressed -->
-    <string name="clock_rubik_distressed_name">Rubik Distressed</string>
-    <string name="clock_rubik_distressed_description">Digital Rubik Distressed</string>
-    <!-- Rubik Gemstones -->
-    <string name="clock_rubik_gemstones_name">Rubik Gemstones</string>
-    <string name="clock_rubik_gemstones_description">Digital Rubik Gemstones</string>
-    <!-- Rubik Marker Hatch -->
-    <string name="clock_rubik_market_hatch_name">Rubik Marker Hatch</string>
-    <string name="clock_rubik_market_hatch_description">Digital Rubik Marker Hatch</string>
-
-    <!-- Subway Clock -->
-    <string name="clock_subway_name">Subway</string>
-    <string name="clock_subway_description">Bold urban style with subway-inspired typography</string>
 
     <!-- Ridge Clock -->
     <string name="clock_ridge_name">Ridge</string>
@@ -54,10 +31,6 @@
     <!-- SF Pro Clock -->
     <string name="clock_sfpro_name">SF Pro Rounded</string>
     <string name="clock_sfpro_description">Modern rounded sans-serif with clean aesthetics</string>
-
-    <!-- Space Game Clock -->
-    <string name="clock_spacegame_name">Space Game</string>
-    <string name="clock_spacegame_description">Futuristic sci-fi inspired typography</string>
 
     <!-- Accuratist Clock -->
     <string name="clock_accuratist_name">Accuratist</string>

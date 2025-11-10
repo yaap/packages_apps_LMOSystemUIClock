@@ -723,31 +723,20 @@ constructor(
             return when(clockId) {
                 ALBERT_SANS_CLOCK_ID -> R.font.albertsans
                 BLAKA_CLOCK_ID -> R.font.blaka
-                CREEPSTER_CLOCK_ID -> R.font.creepster
-                KABLAMMO_CLOCK_ID -> R.font.kablammo
-                MODAK_CLOCK_ID -> R.font.modak
                 MYSTERY_QUEST_CLOCK_ID -> R.font.mysteryquest
-                RUBIK_DIRT_CLOCK_ID -> R.font.rubikdirt
-                RUBIK_DISTRESSED_CLOCK_ID -> R.font.rubikdistressed
-                RUBIK_GEMSTONES_CLOCK_ID -> R.font.rubikgemstones
-                RUBIK_MARKER_HATCH_CLOCK_ID -> R.font.rubikmarkerhatch
-                SUBWAY_CLOCK_ID -> R.font.subway
                 RIDGE_CLOCK_ID -> R.font.ridge
                 BEAUTY_CLOCK_ID -> R.font.beauty
                 SFPRO_CLOCK_ID -> R.font.sfpro_semibold_rounded
-                SPACEGAME_CLOCK_ID -> R.font.spacegame
                 ACCURATIST_CLOCK_ID -> R.font.accuratist
                 NOTHINGDOT_CLOCK_ID -> R.font.nothingdot
-                else -> R.font.modak // Default fallback
+                else -> R.font.accuratist // Default fallback
             }
         }
 
         fun getLineSpaceByClockId(clockId: String): Int {
             return when(clockId) {
                 BLAKA_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_blaka
-                MODAK_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_modak
                 SFPRO_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_sfpro
-                SUBWAY_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_subway
                 NOTHINGDOT_CLOCK_ID -> R.dimen.keyguard_clock_line_spacing_scale_nothingdot
                 else -> R.dimen.keyguard_clock_line_spacing_scale
             }

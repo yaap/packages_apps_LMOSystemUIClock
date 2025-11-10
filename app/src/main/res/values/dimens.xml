@@ -24,12 +24,8 @@
     <dimen name="clock_padding_start">28dp</dimen>
 
     <!-- Custom dimens -->
-    <!-- Modak -->
-    <item name="keyguard_clock_line_spacing_scale_modak" type="dimen" format="float">0.55</item>
     <!-- Blaka -->
     <item name="keyguard_clock_line_spacing_scale_blaka" type="dimen" format="float">0.6</item>
-    <!-- Subway -->
-    <item name="keyguard_clock_line_spacing_scale_subway" type="dimen" format="float">0.9</item>
     <!-- SF Pro -->
     <item name="keyguard_clock_line_spacing_scale_sfpro" type="dimen" format="float">0.8</item>
     <!-- Ndot57 -->
