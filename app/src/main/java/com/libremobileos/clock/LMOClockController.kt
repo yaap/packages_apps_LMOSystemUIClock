@@ -343,6 +343,10 @@ class LMOClockController(
             SFPRO_CLOCK_ID -> ctx.getString(R.string.clock_sfpro_name)
             ACCURATIST_CLOCK_ID -> ctx.getString(R.string.clock_accuratist_name)
             NOTHINGDOT_CLOCK_ID -> ctx.getString(R.string.clock_nothingdot_name)
+            ASIMOVIAN_CLOCK_ID -> ctx.getString(R.string.clock_asimovian_name)
+            CABINSKETCH_CLOCK_ID -> ctx.getString(R.string.clock_cabinsketch_name)
+            INDIEFLOWER_CLOCK_ID -> ctx.getString(R.string.clock_indieflower_name)
+            SPECIALELITE_CLOCK_ID -> ctx.getString(R.string.clock_specialelite_name)
             else -> ""
         }
     }
@@ -357,6 +361,10 @@ class LMOClockController(
             SFPRO_CLOCK_ID -> ctx.getString(R.string.clock_sfpro_description)
             ACCURATIST_CLOCK_ID -> ctx.getString(R.string.clock_accuratist_description)
             NOTHINGDOT_CLOCK_ID -> ctx.getString(R.string.clock_nothingdot_description)
+            ASIMOVIAN_CLOCK_ID -> ctx.getString(R.string.clock_asimovian_description)
+            CABINSKETCH_CLOCK_ID -> ctx.getString(R.string.clock_cabinsketch_description)
+            INDIEFLOWER_CLOCK_ID -> ctx.getString(R.string.clock_indieflower_description)
+            SPECIALELITE_CLOCK_ID -> ctx.getString(R.string.clock_specialelite_description)
             else -> ""
         }
     }

@@ -869,6 +869,11 @@ constructor(
                 SFPRO_CLOCK_ID -> R.font.sfpro_semibold_rounded
                 ACCURATIST_CLOCK_ID -> R.font.accuratist
                 NOTHINGDOT_CLOCK_ID -> R.font.nothingdot
+                ASIMOVIAN_CLOCK_ID -> R.font.asimovian
+                ASIMOVIAN_CLOCK_ID -> R.font.asimovian
+                CABINSKETCH_CLOCK_ID -> R.font.cabinsketch
+                INDIEFLOWER_CLOCK_ID -> R.font.indieflower
+                SPECIALELITE_CLOCK_ID -> R.font.specialelite
                 else -> R.font.accuratist
             }
         }
