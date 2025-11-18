@@ -31,6 +31,7 @@ const val ASIMOVIAN_CLOCK_ID = "AsimovianClock"
 const val CABINSKETCH_CLOCK_ID = "CabinSketchClock"
 const val INDIEFLOWER_CLOCK_ID = "IndieFlowerClock"
 const val SPECIALELITE_CLOCK_ID = "SpecialEliteClock"
+const val DEADJIM_CLOCK_ID = "DeadJimClock"
 
 val LMO_CLOCKS = listOf(
     ALBERT_SANS_CLOCK_ID,
@@ -45,6 +46,7 @@ val LMO_CLOCKS = listOf(
     CABINSKETCH_CLOCK_ID,
     INDIEFLOWER_CLOCK_ID,
     SPECIALELITE_CLOCK_ID,
+    DEADJIM_CLOCK_ID,
 )
 
 @Requires(target = ClockProviderPlugin::class, version = ClockProviderPlugin.VERSION)
